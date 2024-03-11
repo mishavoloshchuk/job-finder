@@ -54,6 +54,20 @@ class Candidate {
         this.skillsElem.removeChild(skill.element);
         return this.skills.splice(skillId, 1);
     }
+
+    setSkillsMatched(matchedSkills) {
+        // Очищення виділення попередніх навичок
+        this.skills.forEach(skill => skill.setMatched(false));
+        
+
+        // Виділення навичок, які підходять по вакансії
+        matchedSkills.forEach(matchedSkill => {
+            const skill = this.skills.find(skill => skill.tech == matchedSkill);
+            if (skill) {
+                skill.setMatched(true);
+            }
+        });
+    }
     
     showCandidate() {
         Candidate.list.appendChild(this.element);
@@ -70,6 +84,14 @@ class CandidatesSkill {
         .content.cloneNode(true).firstElementChild; 
         this.element.innerHTML = tech.getMainName();
         this.tech = tech;
+    }
+
+    setMatched(isMatched) {
+        if (isMatched) {
+            this.element.classList.add('matched-skill'); // Додайте стилі для виділення
+        } else {
+            this.element.classList.remove('matched-skill');
+        }
     }
 }
 
@@ -215,15 +237,15 @@ function getById(id) {
  }
 
 class TextSelector2 {
-    constructor(elem) {
+    constructor(elem, padding = 2) {
         this.elem = elem;
+        this.DEFAULT_PADDING = padding
     }
 
-    select(startIndx, endIndx, color = "#2B66C966", padding = 2) {
+    select(startIndx, endIndx, color = "#2B66C966", padding = this.DEFAULT_PADDING) {
         const secectionRect = this.getSelectionRect(startIndx, endIndx);
         const div = document.createElement('div');
         div.className = 'selection';
-        console.log(padding)
         Object.assign(div.style, {
             backgroundColor: color,
             top:    (secectionRect.top - padding)      + 'px',
@@ -344,7 +366,8 @@ function process() {
 
     const text = elem.innerHTML;
     const findTechResult = technologies.findTechInText(text);
-    const foundTechs = [];
+    const foundTechs = findTechResult.map(range => range.tech);
+
     for (let range of findTechResult) {
         resumeSelection.select(range.start, range.end, "white", "var(--second-color)");
         
@@ -353,14 +376,19 @@ function process() {
 
     const rating = Rating.rate(foundTechs);
     rating.sort((a, b) => b.rating - a.rating);
-    candidates.forEach(candidate => candidate.hideCandidate());
-    rating.forEach(rating => rating.candidate.showCandidate());
+    
+    // Оновлення відображення кандидатів та виділення навичок
+    rating.forEach(rating => {
+        rating.candidate.setSkillsMatched(foundTechs);
+        rating.candidate.showCandidate();
+    });
+    
     ScreenSwitcher.setActive(getById("candidates_screen"));
-    candidateSelection2.select(0, 6);
+    // candidateSelection2.select(0, 6);
 }
 
 const candidateSelection = new TextSelector(candidates[1].element.querySelector('h2'));
-candidateSelection.select(0, 6);
+// candidateSelection.select(0, 6);
 
 const candidateSelection2 = new TextSelector2(candidates[0].element.querySelector('h2'));
 
