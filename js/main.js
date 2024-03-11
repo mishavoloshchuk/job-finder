@@ -107,15 +107,37 @@ class Technologies {
 
     findTechInText(text) {
         text = text.toLowerCase();
+        // Get all names of all technologies
+        const sortedAllTechNames = this.getAllNames()
+        .sort((a, b) => b.name.length - a.name.length);
 
         const matches = [];
-        for (let technology of this.technologies) {
-            matches.push({
-                technology: technology,
-                textPosition: technology.findTechInText(text)
-            });
+        
+        for (let tech of sortedAllTechNames) {
+            let foundAt = text.indexOf(tech.name, 0);
+            while(foundAt >= 0) {
+                matches.push({
+                    tech: tech.tech,
+                    start: foundAt, 
+                    end: foundAt + tech.name.length
+                });
+
+                foundAt = text.indexOf(tech.name, foundAt + 1);
+            }
+            text = text.replace(tech.name, ';'.repeat(tech.name.length));
         }
+
         return matches;
+    }
+
+    getAllNames() {
+        const techNames = [];
+        for (let tech of this.technologies) {
+            techNames.push(...tech.names.map(
+                name => { return {name: name, tech: tech} }
+            ));
+        }
+        return techNames;
     }
 }
 
@@ -139,6 +161,7 @@ technologies.addTechnology(
     new Technology("CSS", "CSS3"),
     new Technology("JavaScript", "JS", "ES5", "ES6", "ECMAScript"),
     new Technology("React"),
+    new Technology("React Native"),
     new Technology("PHP", "PHP7", "PHP8"),
     new Technology("MySQL", "MariaDB")
 );
@@ -278,7 +301,8 @@ class TextSelector {
     
         const spanOpenTag = `<span class="selected" style="color: ${textColor}; background-color: ${color};">`;
         const spanCloseTag = '</span>';
-    
+        
+        // Insert span
         this.elem.innerHTML = insertString(this.elem.innerHTML, spanOpenTag, startIndx + offset);
         this.elem.innerHTML = insertString(this.elem.innerHTML, spanCloseTag, endIndx + offset + spanOpenTag.length);
     
@@ -292,7 +316,7 @@ class TextSelector {
     }
 
     removeAll() {
-        if (!this.textSelection) return
+        if (!this.textSelection) return;
         const selections = this.elem.querySelectorAll('.selected');
         selections.forEach(sl => sl.replaceWith(...sl.childNodes));
         this.elem.normalize();
@@ -333,11 +357,10 @@ function process() {
     const text = elem.innerHTML;
     const findTechResult = technologies.findTechInText(text);
     const foundTechs = [];
-    for (let tech of findTechResult) {
-        tech.textPosition.forEach(
-            pos => resumeSelection.select(pos[0], pos[1], "white", "var(--second-color)")
-        );
-        foundTechs.push(tech.technology);
+    for (let range of findTechResult) {
+        resumeSelection.select(range.start, range.end, "white", "var(--second-color)");
+        
+        foundTechs.push(range.tech);
     }
 
     const rating = Rating.rate(foundTechs);
