@@ -81,18 +81,6 @@ class Technology {
         this.names = names.map(name => name.toLowerCase())
     }
 
-    findTechInText(text) {
-        const matches = [];
-        for (let techName of this.names) {
-            let foundAt = text.indexOf(techName, 0);
-            while(foundAt >= 0) {
-                matches.push([foundAt, foundAt + techName.length]);
-                foundAt = text.indexOf(techName, foundAt + 1);
-            }
-        }
-        return matches;
-    }
-
     getMainName() {
         return this.names[0];
     }
@@ -124,7 +112,7 @@ class Technologies {
 
                 foundAt = text.indexOf(tech.name, foundAt + 1);
             }
-            text = text.replace(tech.name, ';'.repeat(tech.name.length));
+            text = text.replaceAll(tech.name, ';'.repeat(tech.name.length));
         }
 
         return matches;
